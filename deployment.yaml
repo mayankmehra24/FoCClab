@@ -1,0 +1,76 @@
+﻿# ============================================================
+# FoCC Lab 2 (AWS/EKS) - Flask Frontend Deployment
+#
+# BEFORE APPLYING: replace the two placeholders below.
+#   <AWS_ACCOUNT_ID>  - your 12-digit AWS account ID
+#   <AWS_REGION>      - e.g. us-east-1
+#   <IMAGE_TAG>       - e.g. v1.0.0
+#
+# The setup.ps1 script patches these automatically.
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: focc-lab2
+  labels:
+    app: frontend
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: frontend
+      annotations:
+        # CloudWatch Container Insights picks up these labels automatically
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "5000"
+    spec:
+      containers:
+        - name: frontend
+          # ECR image path - patched by setup.ps1
+          image: <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/focc-lab2-frontend:<IMAGE_TAG>
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+              name: http
+          env:
+            - name: REDIS_HOST
+              value: "redis"        # matches the Redis ClusterIP service name
+            - name: REDIS_PORT
+              value: "6379"
+            - name: APP_VERSION
+              value: "1.0.0"
+            - name: FLASK_DEBUG
+              value: "false"
+          resources:
+            requests:
+              cpu: "100m"           # HPA targets 50% of this = 50m
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          # Liveness probe: restart pod if Flask process hangs
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+            timeoutSeconds: 5
+          # Readiness probe: remove pod from load balancer if Redis is down
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5

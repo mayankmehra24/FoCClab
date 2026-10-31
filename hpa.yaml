@@ -1,0 +1,40 @@
+﻿# ============================================================
+# FoCC Lab 2 (AWS/EKS) - HorizontalPodAutoscaler
+#
+# Scales frontend pods from 1 to 5 replicas.
+# Trigger: average CPU > 50% of the 100m request = 50m CPU.
+# Requires metrics-server (EKS does NOT ship it by default;
+# install it once - see README.md Section 5).
+# ============================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+  namespace: focc-lab2
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50    # 50% of 100m = 50m CPU per pod
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30     # react quickly during load test
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 120    # cool-down after load ends
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60

@@ -1,0 +1,33 @@
+﻿# ============================================================
+# FoCC Lab 2 (AWS/EKS) - Flask Frontend LoadBalancer Service
+#
+# On EKS this provisions an AWS Classic Load Balancer (CLB)
+# by default, or an ALB if you install the AWS Load Balancer
+# Controller. Classic LB is simpler and sufficient for this lab.
+#
+# AWS equivalent of Azure LoadBalancer service type.
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: focc-lab2
+  labels:
+    app: frontend
+    tier: frontend
+  annotations:
+    # (Optional) Use NLB instead of Classic LB for better performance:
+    # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    #
+    # (Optional) Add access logs to S3:
+    # service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+    # service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "your-bucket"
+spec:
+  type: LoadBalancer          # EKS creates AWS Classic/NLB for this
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80                # External port (what users connect to)
+      targetPort: 5000        # Internal Flask/Gunicorn port
+      protocol: TCP

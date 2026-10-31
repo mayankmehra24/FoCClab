@@ -1,0 +1,76 @@
+﻿# ============================================================
+# FoCC Lab 2 (AWS/EKS) - Redis Backend
+# Includes both Deployment and ClusterIP Service in one file.
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: focc-lab2
+  labels:
+    app: redis
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        tier: backend
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.2-alpine
+          command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+          # NOTE: For persistence across pod restarts, replace emptyDir
+          # with a PersistentVolumeClaim backed by Amazon EBS (gp2/gp3).
+          # This is optional for a lab but important in production.
+---
+# Redis ClusterIP Service (internal to cluster only - not exposed to internet)
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: focc-lab2
+  labels:
+    app: redis
+    tier: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP

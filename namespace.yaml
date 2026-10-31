@@ -1,0 +1,12 @@
+﻿# ============================================================
+# FoCC Lab 2 (AWS) - Namespace
+# Apply first: kubectl apply -f k8s/namespace.yaml
+# ============================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: focc-lab2
+  labels:
+    name: focc-lab2
+    project: fundamentals-of-cloud-computing
+    lab: lab2

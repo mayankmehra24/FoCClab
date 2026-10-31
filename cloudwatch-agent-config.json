@@ -1,0 +1,37 @@
+﻿{
+  "agent": {
+    "region": "REPLACE_WITH_YOUR_REGION"
+  },
+  "logs": {
+    "metrics_collected": {
+      "kubernetes": {
+        "cluster_name": "REPLACE_WITH_YOUR_CLUSTER_NAME",
+        "metrics_collection_interval": 60,
+        "enhanced_container_insights": true
+      }
+    },
+    "force_flush_interval": 5
+  },
+  "metrics": {
+    "namespace": "ContainerInsights",
+    "metrics_collected": {
+      "cpu": {
+        "measurement": [
+          {"name": "cpu_usage_idle", "rename": "CPU_USAGE_IDLE", "unit": "Percent"},
+          {"name": "cpu_usage_nice", "unit": "Percent"}
+        ],
+        "metrics_collection_interval": 60,
+        "totalcpu": false
+      },
+      "disk": {
+        "measurement": ["used_percent"],
+        "metrics_collection_interval": 60,
+        "resources": ["/"]
+      },
+      "mem": {
+        "measurement": ["mem_used_percent"],
+        "metrics_collection_interval": 60
+      }
+    }
+  }
+}
